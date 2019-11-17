@@ -1,9 +1,9 @@
 # regex_custom_route_summary
 A script I wrote for fixing inaccurate route summaries where the suburbs were not contiguous.
 
-title: Custom Route Summary Script
-author: David Smith
-created: 17/11/2019
+Title: Custom Route Summary Script
+Author: David Smith
+Created: 17/11/2019
 
 Instructions:
     
