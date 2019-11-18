@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-
 """
 title: Custom Route Summary Script
 author: David Smith
 created: 17/11/2019
 
 Instructions:
-    
+
 1) Go to this website: https://repl.it/languages/python3
-    
-2) Copy and paste the code below (everything from line 32 onwards, inclusive) into the white space
+
+2) Copy and paste the code below (everything from line 34 onwards, inclusive) into the white space
    in the middle.
-    
+
 3) Paste the route summary you want to fix up
-   in between the triple quotes, 
+   in between the triple quotes,
    as per the example below, with no spaces before
-   the first road name or after the last suburb. 
+   the first road name or after the last suburb.
+   Please also delete the first line containing 'Start: ' and
+   the end line containing 'End: '
 
 4) Click 'run'.
 
@@ -23,71 +24,83 @@ Instructions:
    of the screen.
    Highlight that text, copy it, then paste it back into the custom route
    summary in the portal.
-   
-If you have any feedback for me, I'd love to hear it:
-david.smith@nhvr.gov.au
 
+If you have any feedback for me (e.g. 'It doesn't bloody work!'), I'd love to hear it.
+Please send a screenshot to david.smith@nhvr.gov.au
+
+Thanks :)
 """
 
 import re
 
-str1 = r"""Madeup Ave, [Merthyr - New Farm]
-Fake St, [Teneriffe - Newstead]
-Nonsense Rd, Teneriffe
-Suburbless St, 
-Another Suburbless St, 
-Furphy Dr, [Newstead - Teneriffe]"""
+str1 = r"""Test Rd, Teneriffe
+Princes Mtwy Off Ramp (onto Picton Rd), Cataract
+Picton Rd, [Neverwhere - ]
+Unknown, ---.   
+Weird St, 1234
+Nums and Letters, ;PA3456
+Hume Mtwy, [Wilton - Berrima]
+Hume Hwy, [Berrima - Marulan|wingello]
+Long Hwy, [Marulan - Marulan]
+Hume Hwy Off Ramp (On to Jerrara Rd), 
+Marulan South Rd, Marulan
+Fake St, New Farm
+Made-up Ln, [Newstead - New Farm]
+Cooper Cres, Marulan"""
 
-pattern = re.compile(r',(\s\[?.*\]?)')
+def tidy_route_summary():
+    lines = str1.split('\n')
+    roads = []
+    suburbs = []
 
-matches = pattern.finditer(str1)
+    for line in lines:
+        roads.append(line[:line.find(',')])
+        suburbs.append(line[line.find(',')+1:])
 
-suburbs = []
+    string_burbs = ', '.join(suburbs).strip()
+    string_burbs = string_burbs.replace(' - ]', ' - NO SUBURB]')
+    string_burbs = string_burbs.replace(',  ,', ', NO SUBURB,')
+
+    pattern1 = re.compile(r'\s\W+,')
+    string_burbs = pattern1.sub(' NO SUBURB,', string_burbs)
+
+    pattern2 = re.compile(r'\s\d+,')
+    string_burbs = pattern2.sub(' NO SUBURB,', string_burbs)
+
+    pattern3 = re.compile(r'\|\w+')
+    string_burbs = pattern3.sub('', string_burbs) 
+
+    burbs = string_burbs.split(', ')
+
+    suburbs = []
+
+    for i in burbs:
+        suburbs.append(i.strip())
+
+    suburbs_corrected = []
    
-for match in matches:
-    suburbs.append(match.group(1))
-
-separated_out = []
-   
-for i in suburbs:
-    if '-' in i:
-        separated_out.append(i[:i.find('-')-1])
-        separated_out.append(i[i.find('-')+2:])
-    if '-' not in i and i.isspace() == False:
-        separated_out.append(i)
-    if i.isspace():
-        separated_out.append('No suburb') 
-
-for i in range(len(separated_out)-1): 
-    if separated_out[i].startswith(' '):
-        separated_out[i] = separated_out[i].strip(' ')
-
-for i in range(len(separated_out)-1): 
-    if separated_out[i] == 'No suburb':
-        separated_out[i] == 'No suburb'
-    if separated_out[i].endswith(']') and separated_out[i+1].startswith('['):
-        separated_out[i+1] = '['+separated_out[i].strip(']')
-    if separated_out[i].isalpha():
-        separated_out[i] = separated_out[i-1].strip(']')
+    for i in suburbs:
+        if '[' in i:
+            dummy = []
+            pattern4 = re.compile(r'(\w+)\s+\-')
+            matches = pattern4.finditer(i)
+            for match in matches:
+                dummy.append(match.group(1))
+                if i.count(dummy[0]) > 1:
+                    suburbs_corrected.append(dummy[0])
+                else:
+                    suburbs_corrected.append(i)
+        else:
+            suburbs_corrected.append(i)
     
-suburbs_corrected = []
+    joined = zip(roads, suburbs_corrected)
 
-for i in range(len(separated_out)-1):
-    if separated_out[i].startswith('[') and separated_out[i+1].endswith(']'):
-        suburbs_corrected.append(separated_out[i]+' - '+separated_out[i+1])
-    if separated_out[i] == 'No suburb':
-        suburbs_corrected.append(separated_out[i])
-    if separated_out[i].isalpha():
-        suburbs_corrected.append(separated_out[i])   
+    for i, j in joined:  
+        print(i+', '+j)
+            
+tidy_route_summary()
 
-lines = str1.split('\n')
 
-lines_stripped = []
 
-for line in lines:
-    lines_stripped.append(line[:line.find(',')])
-    
-final = zip(lines_stripped, suburbs_corrected)
 
-for i, j in final:
-    print(i+', '+j)
+
