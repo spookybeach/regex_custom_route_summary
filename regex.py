@@ -38,7 +38,8 @@ Princes Mtwy Off Ramp (onto Picton Rd), Cataract
 Picton Rd, [Neverwhere - ]
 Unknown, ---.   
 Weird St, 1234
-Nums and Letters, ;PA3456
+Chars Nums and Letters, ;PA3456
+Pre-approval, PA1234
 Hume Mtwy, [Wilton - Berrima]
 Hume Hwy, [Berrima - Marulan|wingello]
 Long Hwy, [Marulan - Marulan]
@@ -69,6 +70,12 @@ def tidy_route_summary():
 
     pattern3 = re.compile(r'\|\w+')
     string_burbs = pattern3.sub('', string_burbs) 
+    
+    pattern4 = re.compile(r'[\;\-]+[\w\d]+')
+    string_burbs = pattern4.sub(' NO SUBURB', string_burbs)
+    
+    pattern5 = re.compile(r'\w{2}\d{4}')
+    string_burbs = pattern5.sub(' NO SUBURB', string_burbs)
 
     burbs = string_burbs.split(', ')
 
@@ -82,8 +89,8 @@ def tidy_route_summary():
     for i in suburbs:
         if '[' in i:
             dummy = []
-            pattern4 = re.compile(r'(\w+)\s+\-')
-            matches = pattern4.finditer(i)
+            pattern6 = re.compile(r'(\w+)\s+\-')
+            matches = pattern6.finditer(i)
             for match in matches:
                 dummy.append(match.group(1))
                 if i.count(dummy[0]) > 1:
@@ -92,7 +99,8 @@ def tidy_route_summary():
                     suburbs_corrected.append(i)
         else:
             suburbs_corrected.append(i)
-    
+
+                
     joined = zip(roads, suburbs_corrected)
 
     for i, j in joined:  
