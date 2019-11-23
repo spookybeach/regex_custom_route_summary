@@ -1,114 +1,163 @@
 # -*- coding: utf-8 -*-
-"""
-title: Custom Route Summary Script
-author: David Smith
-created: 17/11/2019
-
-Instructions:
-
-1) Go to this website: https://repl.it/languages/python3
-
-2) Copy and paste the code below (everything from line 34 onwards, inclusive) into the white space
-   in the middle.
-
-3) Paste the route summary you want to fix up
-   in between the triple quotes,
-   as per the example below, with no spaces before
-   the first road name or after the last suburb.
-   Please also delete the first line containing 'Start: ' and
-   the end line containing 'End: '
-
-4) Click 'run'.
-
-5) The corrected route summary will appear in the terminal on the right-hand side
-   of the screen.
-   Highlight that text, copy it, then paste it back into the custom route
-   summary in the portal.
-
-If you have any feedback for me (e.g. 'It doesn't bloody work!'), I'd love to hear it.
-Please send a screenshot to david.smith@nhvr.gov.au
-
-Thanks :)
-"""
-
 import re
+import string
 
-str1 = r"""Test Rd, Teneriffe
-Princes Mtwy Off Ramp (onto Picton Rd), Cataract
-Picton Rd, [Neverwhere - ]
-Unknown, ---.   
-Weird St, 1234
-Chars Nums and Letters, ;PA3456
-Pre-approval, PA1234
-Hume Mtwy, [Wilton - Berrima]
-Hume Hwy, [Berrima - Marulan|wingello]
-Long Hwy, [Marulan - Marulan]
-Hume Hwy Off Ramp (On to Jerrara Rd), 
-Marulan South Rd, Marulan
-Fake St, New Farm
-Made-up Ln, [Newstead - New Farm]
-Cooper Cres, Marulan"""
+#PASTE ROUTE SUMMARY BELOW
+str1 = r"""Barclay Cres, Hastings
+Marine Pde, Hastings
+Frankston-Flinders Rd, [Hastings - Somerville]
+Hawkins Rd, Baxter
+Fultons Rd, [ - Baxter]
+Golf Links Rd, [ - Frankston South]
+Mornington Peninsula Fwy on ramp,
+Mornington Peninsula Fwy, [Langwarrin South - Carrum Downs](Mornington Peninsula Fwy Off Ramp (to Eastlink))
+Eastlink, [Carrum Downs - Noble Park]
+Eastlink Off-Ramp (Princes Hwy), Noble Park
+Princes Hwy, [Noble Park - Springvale]
+Centre Rd, [Springvale - ]
+Westall Rd, [Clayton South - Clayton]
+Centre Rd, Springvale
+Police Rd, Springvale
+Princes Hwy, [Springvale - ]
+Eastlink, [Noble Park - Carrum Downs]
+Eastlink Off Ramp (onto Mornington Peninsula Fwy), Carrum Downs
+Mornington Peninsula Fwy, [Carrum Downs - Langwarrin South]
+Mornington Peninsula Fwy Off Ramp, Langwarrin South
+Mornington Peninsula off ramp,
+Golf Links Rd, [Langwarrin South - ]
+Fultons Rd, [Baxter - ]
+Hawkins Rd, Baxter
+Frankston-Flinders Rd, [Somerville - Hastings]
+Marine Pde, Hastings
+Barclay Cres, Hastings"""
 
 def tidy_route_summary():
+    print('Remember to check the final route summary for errors! The program doesn\'t always know the best choice to make and sometimes gets it wrong :)', '\n')
     lines = str1.split('\n')
+    
+    for line in range(len(lines)):
+        lines[line] = lines[line].strip()
+
     roads = []
     suburbs = []
-
     for line in lines:
         roads.append(line[:line.find(',')])
-        suburbs.append(line[line.find(',')+1:])
-
-    string_burbs = ', '.join(suburbs).strip()
-    string_burbs = string_burbs.replace(' - ]', ' - NO SUBURB]')
-    string_burbs = string_burbs.replace(',  ,', ', NO SUBURB,')
-
-    pattern1 = re.compile(r'\s\W+,')
-    string_burbs = pattern1.sub(' NO SUBURB,', string_burbs)
-
-    pattern2 = re.compile(r'\s\d+,')
-    string_burbs = pattern2.sub(' NO SUBURB,', string_burbs)
-
-    pattern3 = re.compile(r'\|\w+')
-    string_burbs = pattern3.sub('', string_burbs) 
+        suburbs.append(line[line.find(',')+2:])
     
-    pattern4 = re.compile(r'[\;\-]+[\w\d]+')
-    string_burbs = pattern4.sub(' NO SUBURB', string_burbs)
+    for suburb in range(len(suburbs)):
+        suburbs[suburb] = suburbs[suburb].strip()            
     
-    pattern5 = re.compile(r'\w{2}\d{4}')
-    string_burbs = pattern5.sub(' NO SUBURB', string_burbs)
-
-    burbs = string_burbs.split(', ')
-
-    suburbs = []
-
-    for i in burbs:
-        suburbs.append(i.strip())
-
-    suburbs_corrected = []
-   
-    for i in suburbs:
-        if '[' in i:
-            dummy = []
-            pattern6 = re.compile(r'(\w+)\s+\-')
-            matches = pattern6.finditer(i)
-            for match in matches:
-                dummy.append(match.group(1))
-                if i.count(dummy[0]) > 1:
-                    suburbs_corrected.append(dummy[0])
-                else:
-                    suburbs_corrected.append(i)
+    dummy = []
+    
+    word = re.compile(r'\b\w+\b')
+    double_word = re.compile(r'\b\w+\s\w+\b')
+    
+    matches = re.findall(word, suburbs[0])
+    matches2 = re.findall(double_word, suburbs[0])
+    if suburbs[0] not in matches and suburbs[0] not in matches2:
+            suburbs[0] = input('Please enter a first valid suburb (letters only): ')    
+    
+    #weed out unwanted non-alphanumeric characters    
+    bad_chars = re.compile(r'[^a-zA-Z\d\s\[\]\-\|]')
+    bad_char_matches = bad_chars.findall(string.printable)
+    
+    for suburb in range(len(suburbs)):
+        for char in bad_char_matches:
+            if char in suburbs[suburb]:
+                suburbs[suburb] = suburbs[suburb].replace(char, ' ')
+    
+    suburbs_two = []
+    #weed out missing suburb, whitespace, numbers and PA numbers
+    for suburb in suburbs:
+        if len(suburb)==0 or suburb.isspace() or suburb.isnumeric() or re.search(r'\w+\d+', suburb) != None:
+            suburbs_two.append('empty')
         else:
-            suburbs_corrected.append(i)
-
+            suburbs_two.append(suburb)
+    
+    suburbs_three = []
+    
+    suburbs_three.append(suburbs[0])
+    
+    sub_dash_sub = re.compile(r'\b\w+\s\-\s\w+\b')
+    sub_dash_sub_double_word = re.compile(r'\b\w+\s\w+\s\-\s\w+\s\w+\b')
+    left_sub_dash_sub_double_word = re.compile(r'\b\w+\s\w+\s\-\s\w+\b')
+    right_sub_dash_sub_double_word = re.compile(r'\b\w+\s\-\s\w+\s\w+\b')
+    brackets_sub_dash_sub = re.compile(r'\[\w+\s\-\s\w+\]')
+    brackets_sub_dash_sub_double_word = re.compile(r'\[\w+\s\w+\s\-\s\w+\s\w+\]')
+    left_brackets_sub_dash_sub_double_word = re.compile(r'\[\w+\s\w+\s\-\s\w+]')
+    right_brackets_sub_dash_sub_double_word = re.compile(r'\[\w+\s\-\s\w+\s\w+\]')
+    
+    #weed out invalid instances such as 'Suburb - Requesting intersection...' etc
+    for suburb in suburbs_two[1:]:
+        
+        matches = re.findall(sub_dash_sub, suburb)
+        matches2 = re.findall(sub_dash_sub_double_word, suburb)
+        matches3 = re.findall(brackets_sub_dash_sub, suburb)
+        matches4 = re.findall(brackets_sub_dash_sub_double_word, suburb)
+        matches5 = re.findall(word, suburb)
+        matches6 = re.findall(double_word, suburb)
+        matches7 = re.findall(left_brackets_sub_dash_sub_double_word, suburb)
+        matches8 = re.findall(right_brackets_sub_dash_sub_double_word, suburb)
+        matches9 = re.findall(left_sub_dash_sub_double_word, suburb)
+        matches10= re.findall(right_sub_dash_sub_double_word, suburb)
+        
+        if suburb in matches or suburb in matches2 or suburb in matches3 or suburb in matches4 or suburb in matches5 or suburb in matches6 or suburb in matches7 or suburb in matches8 or suburb in matches9 or suburb in matches10:
+            suburbs_three.append(suburb)
+        else:
+            print('\''+suburb+'\''+' is not a valid suburb or suburb range.')
+            suburb2 = input('Please enter something valid. ')
+            suburbs_three.append(suburb2)
+    
+    suburbs_four = []
+    #remove [suburb - suburb] instances and replace with first suburb in brackets
+    for suburb in suburbs_three:
+        matches = re.findall(word, suburb)
+        matches2 = re.findall(double_word, suburb)
+        if '-' in suburb and len(matches2) > 0:
+            suburbs_four.append(matches2[0])
+        elif '-' in suburb and len(matches) > 0:
+            suburbs_four.append(matches[0])
+        else:
+            suburbs_four.append(suburb)
+    
+    suburbs_five = []        
+    #handle 'empty' instances
+    for i, suburb in list(enumerate(suburbs_four)):
+        if suburb == 'empty':
+            suburbs_five.append(suburbs_four[i+1])
+        else:
+            suburbs_five.append(suburb)
+    
+    suburbs_six = []
+    #join suburbs together with '-'    
+    def contiguous(lst, lst_two):
+        for i, suburb in list(enumerate(lst)):
+            if i != 0:
+                suburb = suburb.replace(suburb, '['+lst[i-1]+' - '+suburb+']')
+                lst_two.append(suburb)
+            else:
+                lst_two.append(suburb)
                 
-    joined = zip(roads, suburbs_corrected)
+#        print(lst_two, '\n')
+                
+    contiguous(suburbs_five, suburbs_six) 
+    
+    suburbs_seven = []
+    #eliminate duplicates within brackets
+    for i, suburb in list(enumerate(suburbs_six)):
+        front = suburb[1:suburbs_six[i].find('-')-1]
+        back = suburb[suburbs_six[i].find('-')+2:-1]
+        if front == back:
+            suburbs_seven.append(front)
+        else:
+            suburbs_seven.append(suburb)
 
-    for i, j in joined:  
+    
+    joined = zip(roads, suburbs_seven)
+    print('\n'+'Here is your tidied route summary:')
+    print('\n'+'Start: ')
+    for i, j in joined:
         print(i+', '+j)
-            
+    print('End: ')
+
 tidy_route_summary()
-
-
-
-
-
